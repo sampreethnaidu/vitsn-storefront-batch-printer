@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VITSN Batch Printer | Official Store</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 40px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 800px; width: 100%; background: #1e293b; padding: 40px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h1 { color: #38bdf8; margin-top: 0; }
+        .pricing-box { background: #0f172a; padding: 20px; border-radius: 8px; border: 1px solid #475569; margin-top: 20px; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #334155; font-size: 13px; color: #94a3b8; display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        a { color: #38bdf8; cursor: pointer; text-decoration: none; font-weight: 500; }
+        a:hover { text-decoration: underline; }
+        dialog { background: #1e293b; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 8px; max-width: 600px; padding: 30px; box-shadow: 0 20px 25px rgba(0,0,0,0.8); }
+        dialog::backdrop { background: rgba(0,0,0,0.85); }
+        button { background: #38bdf8; color: #0f172a; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>VITSN Batch Printer</h1>
+        <p>The ultimate decentralized batch printing and remote ad deployment engine. Process unlimited PDF and DOCX files with smart manual duplexing and auto-blank page injection.</p>
+        
+        <div class="pricing-box">
+            <h2 style="margin-top:0; color:#e2e8f0;">Pricing & Services</h2>
+            <ul style="line-height: 1.8;">
+                <li><strong>Free Tier:</strong> Ad-supported batch document processing. (₹0.00 INR)</li>
+                <li><strong>Premium Lifetime Upgrade:</strong> Unrestricted, ad-free processing. (₹19.00 INR)</li>
+                <li><strong>Ad Network Deployment:</strong> 30-day global ad rotation slot. (₹49.00 INR)</li>
+            </ul>
+        </div>
+
+        <!-- Mandatory Razorpay Compliance Footer -->
+        <div class="footer">
+            <a onclick="document.getElementById('tc').showModal()">Terms & Conditions</a>
+            <a onclick="document.getElementById('privacy').showModal()">Privacy Policy</a>
+            <a onclick="document.getElementById('refund').showModal()">Cancellation & Refunds</a>
+            <a onclick="document.getElementById('about').showModal()">About Us</a>
+            <a onclick="document.getElementById('contact').showModal()">Contact Us</a>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <dialog id="tc">
+        <h3 style="margin-top:0; color:#38bdf8;">Terms & Conditions</h3>
+        <p>By downloading and utilizing the VITSN Batch Printer, users agree to the local execution parameters. The Ad Network operates under strict admin moderation; submission does not guarantee approval. Users are responsible for the copyright of printed materials.</p>
+        <form method="dialog"><button>Acknowledge & Close</button></form>
+    </dialog>
+
+    <dialog id="privacy">
+        <h3 style="margin-top:0; color:#38bdf8;">Privacy Policy</h3>
+        <p><strong>Data Locality:</strong> All print jobs and document compilations are executed strictly on your local hardware. No personal documents are uploaded to our servers.<br><br><strong>Telemetry:</strong> We collect anonymized download counts and UI interaction metrics via Firebase to improve software stability.<br><br><strong>Authentication:</strong> Google OAuth is utilized strictly for identity verification and assigning premium ledger status.</p>
+        <form method="dialog"><button>Acknowledge & Close</button></form>
+    </dialog>
+
+    <dialog id="refund">
+        <h3 style="margin-top:0; color:#38bdf8;">Cancellation & Refunds</h3>
+        <p><strong>Premium Upgrades:</strong> Due to the instantaneous unlocking of digital features, the ₹19 Premium upgrade is strictly non-refundable once applied to the user UID.<br><br><strong>Ad Campaigns:</strong> If your ₹49 Ad Campaign is rejected by the Master Admin for violating content guidelines, a full refund will be manually initiated to the original payment source within <strong>5-7 business days</strong>. Active campaigns that are terminated early by admin override forfeit the fee.</p>
+        <form method="dialog"><button>Acknowledge & Close</button></form>
+    </dialog>
+
+    <dialog id="about">
+        <h3 style="margin-top:0; color:#38bdf8;">About Us</h3>
+        <p>VITSN Innovations is a dedicated software development node focusing on highly automated, decentralized workflow utilities and advanced hardware interfacing solutions designed to eliminate operational friction.</p>
+        <form method="dialog"><button>Acknowledge & Close</button></form>
+    </dialog>
+
+    <dialog id="contact">
+        <h3 style="margin-top:0; color:#38bdf8;">Contact Us</h3>
+        <p>For technical support, billing inquiries, or ad network appeals, please utilize the following vector:</p>
+        <p><strong>Operating Entity:</strong> VITSN Innovations (Dr. Yellapu Sampreeth Naidu)<br>
+        <strong>Registered Base:</strong> Vadodara, Gujarat, India<br>
+        <strong>Support Email:</strong> y.sam.naidu@gmail.com</p>
+        <form method="dialog"><button>Acknowledge & Close</button></form>
+    </dialog>
+
+</body>
+</html>
