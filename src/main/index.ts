@@ -120,34 +120,46 @@ function createWindow(): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    // Inject dynamic internal server to bypass file:// OAuth restrictions
+    // Robust production static server with ASAR path resolution
     const server = http.createServer((req, res) => {
       try {
         const parsedUrl = new URL(req.url || '', `http://${req.headers.host}`)
         let pathname = parsedUrl.pathname
-        if (pathname === '/') pathname = '/index.html'
+        if (pathname === '/' || pathname === '') pathname = '/index.html'
         
-        const filePath = join(__dirname, '../renderer', pathname)
+        const rendererRoot = path.join(app.getAppPath(), 'out/renderer')
+        const filePath = path.join(rendererRoot, pathname)
         const extname = String(path.extname(filePath)).toLowerCase()
         
         const mimeTypes: Record<string, string> = {
-          '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
-          '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpg',
-          '.gif': 'image/gif', '.svg': 'image/svg+xml', '.woff': 'application/font-woff',
-          '.woff2': 'font/woff2', '.ttf': 'application/font-ttf', '.wasm': 'application/wasm'
+          '.html': 'text/html', 
+          '.js': 'text/javascript', 
+          '.mjs': 'text/javascript',
+          '.css': 'text/css',
+          '.json': 'application/json', 
+          '.png': 'image/png', 
+          '.jpg': 'image/jpg',
+          '.jpeg': 'image/jpeg',
+          '.gif': 'image/gif', 
+          '.svg': 'image/svg+xml', 
+          '.ico': 'image/x-icon',
+          '.woff': 'application/font-woff',
+          '.woff2': 'font/woff2', 
+          '.ttf': 'application/font-ttf', 
+          '.wasm': 'application/wasm'
         }
         
         fs.readFile(filePath, (err, content) => {
           if (err) {
-            res.writeHead(404)
+            res.writeHead(404, { 'Content-Type': 'text/plain' })
             res.end('404 Not Found')
           } else {
             res.writeHead(200, { 'Content-Type': mimeTypes[extname] || 'application/octet-stream' })
-            res.end(content, 'utf-8')
+            res.end(content)
           }
         })
       } catch (e) {
-        res.writeHead(500)
+        res.writeHead(500, { 'Content-Type': 'text/plain' })
         res.end('500 Server Error')
       }
     })
