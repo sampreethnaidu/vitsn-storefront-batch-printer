@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>VITSN Batch Printer</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; 
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://* http://localhost:*; 
+        connect-src 'self' wss://* ws://localhost:* https://*; 
+        frame-src 'self' https://* blob: data:; 
+        style-src 'self' 'unsafe-inline'; 
+        img-src * data: blob: local-ad:;
+        media-src * data: blob: local-ad:;
+      "
+    />
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
