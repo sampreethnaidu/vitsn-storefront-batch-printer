@@ -8,25 +8,23 @@ on:
 jobs:
   build-and-publish:
     runs-on: windows-latest
-    permissions:
-      contents: write 
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Provision Node.js Environment
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - name: Install Application Dependencies
-        run: npm install
+      - name: Clean Install Dependencies
+        run: npm ci
 
-      - name: Execute Typecheck & Vite Build
+      - name: Compile Main and Renderer Bundles
         run: npm run build
 
-      - name: Package & Publish Executable
+      - name: Build Executable and Publish Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --win --publish always
