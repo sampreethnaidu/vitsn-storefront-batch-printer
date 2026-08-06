@@ -384,6 +384,33 @@ function App() {
     } catch (error: any) { alert('System Error: Could not initialize payment gateway.') }
   }
 
+  const handleAdminAdAction = async (ad: AdCampaign, action: 'Aired' | 'Rejected' | 'Terminated') => {
+    if (!ad.id || !ad.uid) return alert('Data Corrupted. Missing UID/ID.')
+    
+    const adminNote = adminRemarks[ad.id] || (action === 'Aired' ? 'Approved for 30 Days.' : `Action taken: ${action}`)
+    
+    try {
+      const payload: any = { status: action, remark: adminNote }
+      
+      if (action === 'Aired') {
+        const expiryMs = Date.now() + (30 * 24 * 60 * 60 * 1000)
+        payload.expiryEpoch = expiryMs
+        await update(dbRef(db, `ads/${ad.uid}/${ad.id}`), payload)
+        
+        await set(dbRef(db, `active_ads/${ad.id}`), {
+          targetUrl: ad.targetUrl, topBannerStr: ad.topBannerStr, bottomBannerStr: ad.bottomBannerStr,
+          videoUrl: ad.videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4', sha256: 'pending'
+        })
+        alert(`Campaign Aired Successfully for 30 Days.`)
+      } else {
+        await update(dbRef(db, `ads/${ad.uid}/${ad.id}`), payload)
+        await set(dbRef(db, `active_ads/${ad.id}`), null)
+        alert(`Campaign marked as ${action} and pulled from rotation. (Remark Saved)`)
+      }
+      loadAdminData()
+    } catch (e) { console.error(e); alert("Database Rules Blocked the Write. Ensure Admin rule exists.") }
+  }
+
   const handleLogin = async () => {
     if (isLoggingIn) return; setIsLoggingIn(true)
     try {
@@ -801,11 +828,10 @@ function App() {
                             <div style={{ color: '#64748b', fontSize: '11px', marginBottom: ad.remark ? '4px' : '0' }}>Submitted: {new Date(ad.date || 0).toLocaleDateString()}</div>
                             {ad.remark && <div style={{ color: '#fbbf24', fontSize: '11px', borderTop: '1px dashed #475569', paddingTop: '4px', fontStyle: 'italic' }}>Admin: "{ad.remark}"</div>}
                             {(ad.status === 'Terminated' || ad.status === 'Rejected') && (
-                            <button onClick={() => handleAdRenewal(ad)} style={{ marginTop: '8px', padding: '6px 12px', backgroundColor: '#0ea5e9', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
-                           ↻ Renew Campaign (₹49)
-                           </button>
-                           )}
-                            
+                              <button onClick={() => handleAdRenewal(ad)} style={{ marginTop: '8px', padding: '6px 12px', backgroundColor: '#0ea5e9', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
+                                ↻ Renew Campaign (₹49)
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
