@@ -801,10 +801,10 @@ function App() {
                             <div style={{ color: '#64748b', fontSize: '11px', marginBottom: ad.remark ? '4px' : '0' }}>Submitted: {new Date(ad.date || 0).toLocaleDateString()}</div>
                             {ad.remark && <div style={{ color: '#fbbf24', fontSize: '11px', borderTop: '1px dashed #475569', paddingTop: '4px', fontStyle: 'italic' }}>Admin: "{ad.remark}"</div>}
                             {(ad.status === 'Terminated' || ad.status === 'Rejected') && (
-  <button onClick={() => handleAdRenewal(ad)} style={{ marginTop: '8px', padding: '6px 12px', backgroundColor: '#0ea5e9', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
-    ↻ Renew Campaign (₹49)
-  </button>
-)}
+                            <button onClick={() => handleAdRenewal(ad)} style={{ marginTop: '8px', padding: '6px 12px', backgroundColor: '#0ea5e9', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
+                           ↻ Renew Campaign (₹49)
+                           </button>
+                           )}
                             
                           </div>
                         ))}
