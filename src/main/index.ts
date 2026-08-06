@@ -14,6 +14,7 @@ import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import http from 'http'
 import { URL } from 'url'
+import * as mammoth from 'mammoth'
 
 const razorpay = new Razorpay({
   key_id: 'rzp_test_TJbDUA6rMkOjFE',
@@ -59,36 +60,53 @@ function getFileHash(filePath: string): Promise<string> {
   })
 }
 
-function convertWordToPdf(inputPath: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const { exec } = require('child_process')
-    const outputPath = path.join(app.getPath('temp'), `vitsn_word_conv_${Date.now()}_${path.basename(inputPath, path.extname(inputPath))}.pdf`)
-    
-    const psScript = `
-      $ErrorActionPreference = 'Stop'
-      try {
-        $word = New-Object -ComObject Word.Application
-        $word.Visible = $False
-        $doc = $word.Documents.Open('${inputPath.replace(/'/g, "''")}')
-        $doc.SaveAs('${outputPath.replace(/'/g, "''")}', 17)
-        $doc.Close()
-        $word.Quit()
-        [System.Runtime.Interopservices.Marshal]::ReleaseComObject($word) | Out-Null
-      } catch {
-        if ($word) { $word.Quit() }
-        exit 1
-      }
+/**
+ * Converts Word (.docx/.doc) files to PDF using mammoth and Electron Chromium renderer.
+ * Bypasses OS-level MS Word dependencies entirely.
+ */
+async function convertWordToPdf(inputPath: string): Promise<string> {
+  try {
+    const result = await mammoth.convertToHtml({ path: inputPath })
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; color: #000; background: #fff; }
+            img { max-width: 100%; height: auto; }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid #000; padding: 8px; }
+          </style>
+        </head>
+        <body>${result.value}</body>
+      </html>
     `
 
-    const encodedScript = Buffer.from(psScript, 'utf16le').toString('base64')
-    exec(`powershell -NoProfile -NonInteractive -EncodedCommand ${encodedScript}`, (error: any) => {
-      if (error) {
-        return reject(new Error(`Failed to convert Word file '${path.basename(inputPath)}'. Ensure Microsoft Word is installed.`))
-      }
-      if (fs.existsSync(outputPath)) resolve(outputPath)
-      else reject(new Error(`Transpiled PDF for '${path.basename(inputPath)}' was not found.`))
+    const win = new BrowserWindow({
+      show: false,
+      webPreferences: { nodeIntegration: false, contextIsolation: true }
     })
-  })
+
+    await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`)
+
+    const pdfBuffer = await win.webContents.printToPDF({
+      printBackground: true,
+      pageSize: 'A4',
+      margins: { marginType: 'default' }
+    })
+
+    win.close()
+
+    const outputPath = path.join(
+      app.getPath('temp'),
+      `vitsn_word_conv_${Date.now()}_${path.basename(inputPath, path.extname(inputPath))}.pdf`
+    )
+    fs.writeFileSync(outputPath, pdfBuffer)
+    return outputPath
+  } catch (error: any) {
+    throw new Error(`Failed to convert Word file '${path.basename(inputPath)}': ${error.message}`)
+  }
 }
 
 function createWindow(): void {
@@ -120,7 +138,6 @@ function createWindow(): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    // Robust production static server with ASAR path resolution
     const server = http.createServer((req, res) => {
       try {
         const parsedUrl = new URL(req.url || '', `http://${req.headers.host}`)
@@ -164,7 +181,6 @@ function createWindow(): void {
       }
     })
     
-    // Bind to 127.0.0.1 (Localhost only) on a random available port (0) for security
     server.listen(0, '127.0.0.1', () => {
       const address = server.address()
       const port = typeof address === 'string' ? 0 : address?.port
@@ -192,7 +208,6 @@ app.whenReady().then(() => {
     })
   })
 
-  // Silently check for updates on boot (ignore errors if offline or dev mode)
   autoUpdater.checkForUpdatesAndNotify().catch(() => { /* Silent failure */ })
   // ---------------------------------------
 
@@ -217,10 +232,24 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('print-file', async (_, filePath: string, printerName: string) => {
+    let workingPdfPath = filePath
+    let isTempFile = false
     try {
-      await print(filePath, { printer: printerName })
+      const ext = path.extname(filePath).toLowerCase()
+      if (ext === '.doc' || ext === '.docx') {
+        workingPdfPath = await convertWordToPdf(filePath)
+        isTempFile = true
+      }
+
+      await print(workingPdfPath, { printer: printerName })
       return { success: true }
-    } catch (error: any) { return { success: false, error: error.message } }
+    } catch (error: any) { 
+      return { success: false, error: error.message } 
+    } finally {
+      if (isTempFile && fs.existsSync(workingPdfPath)) {
+        try { fs.unlinkSync(workingPdfPath) } catch (_) {}
+      }
+    }
   })
 
   ipcMain.handle('pdf:read-buffer', async (_, filePath: string) => {
@@ -229,6 +258,7 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('pdf:process-batch', async (_, config) => {
+    const tempConvertedPdfs: string[] = []
     try {
       const mergedPdf = await PDFDocument.create()
       let runList: string[] = []
@@ -249,7 +279,10 @@ app.whenReady().then(() => {
       for (const rawFilePath of runList) {
         let workingPdfPath = rawFilePath
         const ext = path.extname(rawFilePath).toLowerCase()
-        if (ext === '.doc' || ext === '.docx') workingPdfPath = await convertWordToPdf(rawFilePath)
+        if (ext === '.doc' || ext === '.docx') {
+          workingPdfPath = await convertWordToPdf(rawFilePath)
+          tempConvertedPdfs.push(workingPdfPath)
+        }
 
         const fileBytes = fs.readFileSync(workingPdfPath)
         const srcDoc = await PDFDocument.load(fileBytes)
@@ -292,6 +325,13 @@ app.whenReady().then(() => {
     } catch (error: any) {
       console.error('PDF Engine Error:', error)
       return { success: false, error: error.message }
+    } finally {
+      // Clean up temporary PDFs generated from Word documents
+      for (const tempPath of tempConvertedPdfs) {
+        if (fs.existsSync(tempPath)) {
+          try { fs.unlinkSync(tempPath) } catch (_) {}
+        }
+      }
     }
   })
 
